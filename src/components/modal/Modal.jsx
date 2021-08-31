@@ -1,36 +1,37 @@
-import React, { Component } from 'react';
+import { useEffect } from 'react';
+import PropTypes from 'prop-types';
 
-class Modal extends Component {
-  state = {
-    isLoading: false,
-  };
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleEscape);
+const Modal = ({ closeModal, largeImageURL }) => {
+  const handleEscape = e => e.code === 'Escape' && closeModal();
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleEscape);
     const body = document.querySelector('body');
     body.style.overflow = 'hidden';
-  }
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      const body = document.querySelector('body');
+      body.style.overflow = 'auto';
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleEscape);
-    const body = document.querySelector('body');
-    body.style.overflow = 'auto';
-  }
-
-  handleEscape = e => e.code === 'Escape' && this.props.closeModal();
-
-  onOverlayClick = ({ target, currentTarget }) => {
-    target === currentTarget && this.props.closeModal();
+  const onOverlayClick = ({ target, currentTarget }) => {
+    target === currentTarget && closeModal();
   };
 
-  render() {
-    return (
-      <div onClick={this.onOverlayClick} className="Overlay">
-        <div className="Modal">
-          <img src={this.props.largeImageURL} alt="" />
-        </div>
+  return (
+    <div onClick={onOverlayClick} className="Overlay">
+      <div className="Modal">
+        <img src={largeImageURL} alt="" />
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 export default Modal;
+
+Modal.propTypes = {
+  closeModal: PropTypes.func,
+  largeImageURL: PropTypes.string,
+};

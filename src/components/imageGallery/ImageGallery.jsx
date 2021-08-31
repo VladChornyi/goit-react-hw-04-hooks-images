@@ -1,38 +1,22 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import Loader from 'react-loader-spinner';
 import { getImagesApi } from '../../utils/serviceAPI';
 import Modal from '../modal/Modal';
+import PropTypes from 'prop-types';
 
-class ImageGallery extends Component {
-  state = {
-    page: 1,
-    perPage: 12,
-    images: [],
-    loading: false,
-    largeImgURL: '',
-    isOpenModal: false,
-  };
+const ImageGallery = ({ query }) => {
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [largeImgURL, setLargeImgURL] = useState('');
+  const [isOpenModal, setIsOpenModal] = useState(false);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.query !== this.props.query) {
-      this.getImages({ query: this.props.query });
-      this.setState({ page: 1, images: [] });
-    }
-    if (prevState.page !== this.state.page && this.state.page !== 1) {
-      this.getImages({ query: this.props.query, page: this.state.page });
-    }
-  }
-  getImages = ({ page, query }) => {
-    this.setState({ loading: true });
-    getImagesApi({ query, page })
-      .then(pictures =>
-        this.setState(prev => ({
-          images: [...prev.images, ...pictures],
-          length: pictures.totalHits,
-        })),
-      )
+  const getImages = (query, page = 1) => {
+    setLoading(true);
+    getImagesApi(query, page)
+      .then(pictures => setImages(prevImages => [...prevImages, ...pictures]))
       .finally(() => {
-        this.setState({ loading: false });
+        setLoading(false);
         if (page > 1) {
           window.scrollTo({
             top: document.documentElement.scrollHeight,
@@ -42,47 +26,62 @@ class ImageGallery extends Component {
       });
   };
 
-  handleLoadMore = () => {
-    this.setState(prev => ({ page: prev.page + 1 }));
-  };
-  toggleModal = () => {
-    this.setState(prev => ({ isOpenModal: !prev.isOpenModal }));
-  };
-  setLargeImg = largeImgURL => {
-    this.setState({ largeImgURL });
-  };
-  render() {
-    const { loading, images, isOpenModal, largeImgURL } = this.state;
-    return (
-      <>
-        {loading && (
-          <Loader type="BallTriangle" color="#00BFFF" height={80} width={80} timeout={3000} />
-        )}
-        {/* {!length && <h1>Введите корректные данные запроса</h1>} */}
-        {images.length > 0 && (
-          <ul className="ImageGallery">
-            {images.map(image => (
-              <li key={image.id} onClick={this.toggleModal} className="ImageGalleryItem">
-                <img
-                  src={image.webformatURL}
-                  alt={image.tags}
-                  onClick={() => this.setLargeImg(image.largeImageURL)}
-                  className="ImageGalleryItem-image"
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+  useEffect(() => {
+    if (query) {
+      getImages(query);
+      setPage(1);
+      setImages([]);
+    }
+  }, [query]);
 
-        {isOpenModal && <Modal largeImageURL={largeImgURL} closeModal={this.toggleModal} />}
-        {images.length > 1 && (
-          <button className="Button" type="button" onClick={this.handleLoadMore}>
-            Load more
-          </button>
-        )}
-      </>
-    );
-  }
-}
+  useEffect(() => {
+    if (page !== 1) {
+      getImages(query, page);
+    }
+  }, [page, query]);
+
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
+  };
+  const toggleModal = () => {
+    setIsOpenModal(prev => !prev);
+  };
+  const setLargeImg = largeImgURL => {
+    setLargeImgURL(largeImgURL);
+  };
+
+  return (
+    <>
+      {loading && (
+        <Loader type="BallTriangle" color="#00BFFF" height={80} width={80} timeout={3000} />
+      )}
+      {images.length > 0 && (
+        <ul className="ImageGallery">
+          {images.map(image => (
+            <li key={image.id} onClick={toggleModal} className="ImageGalleryItem">
+              <img
+                src={image.webformatURL}
+                alt={image.tags}
+                onClick={() => setLargeImg(image.largeImageURL)}
+                className="ImageGalleryItem-image"
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {isOpenModal && <Modal largeImageURL={largeImgURL} closeModal={toggleModal} />}
+      {images.length > 1 && (
+        <button className="Button" type="button" onClick={handleLoadMore}>
+          Load more
+        </button>
+      )}
+    </>
+  );
+};
 
 export default ImageGallery;
+
+ImageGallery.propTypes = {
+  query: PropTypes.string,
+};
