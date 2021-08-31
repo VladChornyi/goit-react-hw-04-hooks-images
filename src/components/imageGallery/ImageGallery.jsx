@@ -52,9 +52,6 @@ const ImageGallery = ({ query }) => {
 
   return (
     <>
-      {loading && (
-        <Loader type="BallTriangle" color="#00BFFF" height={80} width={80} timeout={3000} />
-      )}
       {images.length > 0 && (
         <ul className="ImageGallery">
           {images.map(image => (
@@ -69,6 +66,11 @@ const ImageGallery = ({ query }) => {
           ))}
         </ul>
       )}
+      <div className="loader">
+        {loading && (
+          <Loader type="BallTriangle" color="#00BFFF" height={80} width={80} timeout={3000} />
+        )}
+      </div>
 
       {isOpenModal && <Modal largeImageURL={largeImgURL} closeModal={toggleModal} />}
       {images.length > 1 && (
